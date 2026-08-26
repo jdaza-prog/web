@@ -257,7 +257,7 @@ finishPlanBtn.addEventListener('click', () => {
 });
 
 acceptBtn.addEventListener('click', () => {
-  const phone = '59171736156';
+  const phone = '59172760146';
   const message = encodeURIComponent(`Sí. ${prettyDate(selectedDate)}, ${selectedTime}. ${selectedPlan}.`);
   window.location.href = `https://wa.me/${phone}?text=${message}`;
 });
