@@ -17,101 +17,164 @@ let selectedPlan = '';
 let selectedDate = '';
 let selectedTime = '';
 let stoneWarningShown = false;
+let autoMoveTimer = null;
+let autoMoveStartTimer = null;
 
 function showScreen(id) {
   qsa('.screen').forEach(s => s.classList.remove('active'));
   qs('#' + id).classList.add('active');
 
-  // En la pantalla inicial bloqueamos por completo el scroll.
-  // En las demás pantallas vuelve a funcionar normalmente.
-  document.body.classList.toggle('invite-active', id === 'screen-invite');
+  const inviteActive = id === 'screen-invite';
+  document.body.classList.toggle('invite-active', inviteActive);
+
+  if (inviteActive) {
+    startAutoNoMovement();
+  } else {
+    stopAutoNoMovement();
+  }
+
   window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 }
 
-// Movimiento del botón "No" basado en el proyecto original.
-// La diferencia es que las coordenadas se limitan al viewport que existía
-// cuando se abrió la página, para que jamás genere barras de desplazamiento.
-const initialViewport = {
-  width: window.visualViewport?.width || window.innerWidth,
-  height: window.visualViewport?.height || window.innerHeight
-};
-
-function visibleViewportSize() {
+function viewportSize() {
+  const vv = window.visualViewport;
   return {
-    width: Math.min(initialViewport.width, window.visualViewport?.width || window.innerWidth),
-    height: Math.min(initialViewport.height, window.visualViewport?.height || window.innerHeight)
+    width: vv ? vv.width : document.documentElement.clientWidth,
+    height: vv ? vv.height : document.documentElement.clientHeight,
+    offsetLeft: vv ? vv.offsetLeft : 0,
+    offsetTop: vv ? vv.offsetTop : 0
   };
 }
 
 function placeNoBesideYes() {
   const yesRect = yesBtn.getBoundingClientRect();
   const noRect = noBtn.getBoundingClientRect();
-  const { width: vw, height: vh } = visibleViewportSize();
-  const margin = 24;
+  const vp = viewportSize();
+  const margin = 16;
 
-  let left = yesRect.right + 18;
+  let left = yesRect.right + 12;
   let top = yesRect.top;
 
-  // Si no cabe a la derecha, lo ponemos a la izquierda del Sí.
-  if (left + noRect.width > vw - margin) {
-    left = yesRect.left - noRect.width - 18;
+  if (left + noRect.width > vp.offsetLeft + vp.width - margin) {
+    left = yesRect.left - noRect.width - 12;
   }
 
-  left = Math.max(margin, Math.min(left, vw - noRect.width - margin));
-  top = Math.max(margin, Math.min(top, vh - noRect.height - margin));
+  const minLeft = vp.offsetLeft + margin;
+  const maxLeft = vp.offsetLeft + vp.width - noRect.width - margin;
+  const minTop = vp.offsetTop + margin;
+  const maxTop = vp.offsetTop + vp.height - noRect.height - margin;
 
-  noBtn.style.left = `${left}px`;
-  noBtn.style.top = `${top}px`;
+  noBtn.style.left = `${Math.max(minLeft, Math.min(left, maxLeft))}px`;
+  noBtn.style.top = `${Math.max(minTop, Math.min(top, maxTop))}px`;
 }
 
 function moveNoButton() {
   if (stoneOverlay.classList.contains('show')) return;
   if (!qs('#screen-invite').classList.contains('active')) return;
 
-  const { width, height } = noBtn.getBoundingClientRect();
-  const { width: vw, height: vh } = visibleViewportSize();
-  const margin = 28;
+  const rect = noBtn.getBoundingClientRect();
+  const vp = viewportSize();
+  const margin = 18;
 
-  const maxX = Math.max(margin, vw - width - margin);
-  const maxY = Math.max(margin, vh - height - margin);
+  const minX = vp.offsetLeft + margin;
+  const maxX = vp.offsetLeft + vp.width - rect.width - margin;
+  const minY = vp.offsetTop + margin;
+  const maxY = vp.offsetTop + vp.height - rect.height - margin;
 
-  const x = margin + Math.random() * Math.max(0, maxX - margin);
-  const y = margin + Math.random() * Math.max(0, maxY - margin);
+  if (maxX <= minX || maxY <= minY) return;
 
-  noBtn.style.left = `${Math.floor(x)}px`;
-  noBtn.style.top = `${Math.floor(y)}px`;
+  // Busca una nueva posición suficientemente distinta de la actual,
+  // pero siempre dentro de la zona visible del celular.
+  let x = minX;
+  let y = minY;
+  const minDistance = Math.min(120, Math.max(70, vp.width * 0.22));
+
+  for (let i = 0; i < 12; i++) {
+    const candidateX = minX + Math.random() * (maxX - minX);
+    const candidateY = minY + Math.random() * (maxY - minY);
+    const distance = Math.hypot(candidateX - rect.left, candidateY - rect.top);
+    x = candidateX;
+    y = candidateY;
+    if (distance >= minDistance) break;
+  }
+
+  noBtn.style.left = `${Math.round(x)}px`;
+  noBtn.style.top = `${Math.round(y)}px`;
 }
 
-function handleNoMouseOver() {
+function registerNoAttempt(event) {
+  if (event) event.preventDefault();
   if (stoneOverlay.classList.contains('show')) return;
+  if (!qs('#screen-invite').classList.contains('active')) return;
 
   noAttempts++;
   moveNoButton();
 
   if (noAttempts === 5 && !stoneWarningShown) {
     stoneWarningShown = true;
-    noBtn.removeEventListener('mouseover', handleNoMouseOver);
+    stopAutoNoMovement();
     stoneOverlay.classList.add('show');
     stoneOverlay.setAttribute('aria-hidden', 'false');
   }
 }
 
-noBtn.addEventListener('mouseover', handleNoMouseOver);
+function stopAutoNoMovement() {
+  if (autoMoveStartTimer) {
+    clearTimeout(autoMoveStartTimer);
+    autoMoveStartTimer = null;
+  }
+  if (autoMoveTimer) {
+    clearInterval(autoMoveTimer);
+    autoMoveTimer = null;
+  }
+}
 
-// Estado inicial: ambos botones aparecen en su posición normal.
-// El botón "No" solo se mueve cuando el mouse se acerca.
+function startAutoNoMovement() {
+  stopAutoNoMovement();
+
+  // En celular queda quieto un momento para que se vea la pregunta.
+  // Después empieza a escapar por sí solo.
+  autoMoveStartTimer = setTimeout(() => {
+    moveNoButton();
+    autoMoveTimer = setInterval(moveNoButton, 1350);
+  }, 2000);
+}
+
+// En PC conserva el efecto por mouse; en celular, tocar "No" cuenta como intento
+// y lo hace escapar inmediatamente. Los movimientos automáticos NO cuentan.
+noBtn.addEventListener('mouseover', (event) => {
+  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    registerNoAttempt(event);
+  }
+});
+noBtn.addEventListener('pointerdown', (event) => {
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    registerNoAttempt(event);
+  }
+});
+
+// Estado inicial: No aparece al lado de Sí y permanece quieto durante 2 segundos.
 document.body.classList.add('invite-active');
-requestAnimationFrame(placeNoBesideYes);
+requestAnimationFrame(() => {
+  placeNoBesideYes();
+  startAutoNoMovement();
+});
+
+window.addEventListener('resize', () => {
+  if (qs('#screen-invite').classList.contains('active')) placeNoBesideYes();
+});
+window.visualViewport?.addEventListener('resize', () => {
+  if (qs('#screen-invite').classList.contains('active')) placeNoBesideYes();
+});
 
 stoneClose.addEventListener('click', () => {
   stoneOverlay.classList.remove('show');
   stoneOverlay.setAttribute('aria-hidden', 'true');
-
-  // Después del aviso, sigue escapando con exactamente la misma lógica.
-  noBtn.addEventListener('mouseover', handleNoMouseOver);
+  startAutoNoMovement();
 });
 
 yesBtn.addEventListener('click', () => {
+  stopAutoNoMovement();
   noBtn.style.display = 'none';
   showScreen('screen-surprise');
 });

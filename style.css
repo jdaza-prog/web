@@ -211,7 +211,9 @@ input:focus, select:focus { border-color: var(--primary-2); box-shadow: 0 0 0 4p
   width: 150px;
   height: 54px;
   margin: 0;
-  transition: none;
+  transition: left .30s ease-out, top .30s ease-out, transform .16s ease, box-shadow .16s ease, filter .16s ease;
+  will-change: left, top;
+  touch-action: manipulation;
 }
 #yes-btn {
   width: 150px;
