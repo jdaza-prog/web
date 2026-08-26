@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Una propuesta para Mishu</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card screen active" id="screen-invite">
+      <img class="hero-img" src="mono-esperando.jpg" alt="Mono esperando" />
+      <h1>Mishu!! qué te parece si esta semana te invito a salir?</h1>
+      <p class="subtle">Solo hay dos opciones. Técnicamente.</p>
+      <div class="answer-row">
+        <button class="btn btn-yes" id="yes-btn">Sí</button>
+        <button class="btn btn-no" id="no-btn">No</button>
+      </div>
+    </section>
+
+    <section class="card screen" id="screen-surprise">
+      <div class="big-emoji">😳</div>
+      <h2>¿EN SERIO DIJISTE QUE SÍ? JAJAJAJA</h2>
+      <p>Ya estaba preparado para que dijeras que no 😂.</p>
+      <button class="btn btn-primary next-btn" data-next="screen-when">Continuar →</button>
+    </section>
+
+    <section class="card screen" id="screen-when">
+      <div class="big-emoji">📅</div>
+      <h2>Entonces, cuándo puedes esta semana?(mejor si es finde!!)</h2>
+      <p class="subtle">Solo puedes elegir desde hoy hasta este domingo.</p>
+      <label for="date-input">Día</label>
+      <input id="date-input" type="date" />
+
+      <label for="time-select">Hora</label>
+      <select id="time-select">
+        <option value="">Selecciona una hora...</option>
+      </select>
+
+      <button class="btn btn-primary" id="set-date-btn" disabled>Listo, siguiente →</button>
+    </section>
+
+    <section class="card screen" id="screen-plan">
+      <h2>Yo me encargo del plan.</h2>
+      <p class="subtle">Solo dime por dónde quieres que vaya la idea.</p>
+
+      <div class="plan-grid" id="plan-grid">
+        <button class="plan-option" data-plan="Comer algo"><span>🍜</span><b>Comer algo</b></button>
+        <button class="plan-option" data-plan="Unas bebidas"><span>🍹</span><b>Unas bebidas</b></button>
+        <button class="plan-option" data-plan="Café"><span>☕</span><b>Café</b></button>
+        <button class="plan-option" data-plan="Paseo con el Brunito"><span>🐶</span><b>Paseo con el Brunito</b></button>
+        <button class="plan-option" data-plan="Cine"><span>🎬</span><b>Cine</b></button>
+        <button class="plan-option" data-plan="Misión torta de chocolate"><span>🍰</span><b>Misión torta de chocolate</b></button>
+        <button class="plan-option wide" data-plan="Plan sorpresa elegido por Andrés"><span>✨</span><b>Yo elijo un plan sorpresa</b></button>
+      </div>
+
+      <button class="btn btn-primary" id="finish-plan-btn" disabled>Confirmar elección →</button>
+    </section>
+
+    <section class="card screen" id="screen-final">
+      <h2>Me alegra que no hayas dicho que no jajaja.</h2>
+      <p id="summary" class="summary"></p>
+      <p class="ps">P.D. La gente normal manda un mensaje. Yo hice una página web para invitarte. Nada del otro mundo.</p>
+      <button class="btn btn-final" id="accept-btn">Ok, acepto</button>
+    </section>
+  </main>
+
+  <div class="stone-overlay" id="stone-overlay" aria-hidden="true">
+    <div class="stone-card">
+      <img src="mono-piedra.jpg" alt="Mono con una piedra" />
+      <h3>Parece que estás intentando presionar “No”.</h3>
+      <p>Creo que en realidad querías presionar “Sí”.</p>
+      <button class="btn btn-primary" id="stone-close">Ya entendí 😅</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
