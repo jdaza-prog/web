@@ -110,7 +110,7 @@ function registerNoAttempt(event) {
   noAttempts++;
   moveNoButton();
 
-  if (noAttempts === 5 && !stoneWarningShown) {
+  if (noAttempts === 3 && !stoneWarningShown) {
     stoneWarningShown = true;
     stopAutoNoMovement();
     stoneOverlay.classList.add('show');
